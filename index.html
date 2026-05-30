@@ -195,6 +195,7 @@ function selectATO(key, name, initial) {
   document.getElementById('tabMes').className = 'ptab active ' + key;
   document.getElementById('tabSem').className = 'ptab ' + key;
   loadData();
+  debugATO();
 }
 
 function logout() {
@@ -215,8 +216,16 @@ function setTab(tab) {
 // ---- Date helpers ----
 function parseGVizDate(v) {
   if (!v) return null;
-  const m = String(v).match(/Date\((\d+),(\d+),(\d+)/);
-  if (m) return new Date(+m[1], +m[2], +m[3]);
+  const s = String(v).trim();
+  // Format: Date(y,m,d,...)
+  const m1 = s.match(/Date\((\d+),(\d+),(\d+)/);
+  if (m1) return new Date(+m1[1], +m1[2], +m1[3]);
+  // Format: d/m/yyyy hh:mm:ss  (Fecha_Venta)
+  const m2 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m2) return new Date(+m2[3], +m2[2] - 1, +m2[1]);
+  // Format: yyyy-mm-dd
+  const m3 = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m3) return new Date(+m3[1], +m3[2] - 1, +m3[3]);
   const d = new Date(v);
   return isNaN(d) ? null : d;
 }
@@ -307,7 +316,7 @@ async function loadData() {
   try {
     const [vis, pres] = await Promise.all([
       fetchSheet('Visitas'),
-      fetchSheet('documentosPresupuesto')
+      fetchSheet('presupuestoProspecto')
     ]);
     DATA.visitas = vis;
     DATA.presupuestos = pres;
@@ -356,22 +365,26 @@ function render() {
     isMyATO(v['Asesor_Visita'])
   );
 
-  // Presupuestos hechos por ATO en período
+  // Presupuestos hechos por ATO en período (por Fecha_Presupuesto)
   const pres = DATA.presupuestos.filter(p =>
     isMyATO(p['Asesor_Presupuesto']) && inPeriod(p['Fecha_Presupuesto'])
   );
 
-  // Ventas (estado Vendido) — usar Fecha_Presupuesto como fecha efectiva
-  const ventas = pres.filter(p => String(p['Estado_Presupuesto'] || '') === 'Vendido');
+  // Ventas (estado Vendido) filtradas por Fecha_Venta en el período
+  const ventas = DATA.presupuestos.filter(p =>
+    isMyATO(p['Asesor_Presupuesto']) &&
+    String(p['Estado_Presupuesto'] || '') === 'Vendido' &&
+    inPeriod(p['Fecha_Venta'])
+  );
 
-  // Monto vendido
-  const montoVendido = ventas.reduce((s, p) => s + (parseFloat(p['Total_Presupuesto']) || 0), 0);
+  // Monto vendido (SubTotal_Presupuesto)
+  const montoVendido = ventas.reduce((s, p) => s + (parseFloat(p['SubTotal_Presupuesto']) || 0), 0);
 
   // Efectividad de cierre
   const efectividad = pres.length > 0 ? (ventas.length / pres.length * 100) : 0;
 
-  // Promedio presupuesto
-  const promPres = pres.length > 0 ? pres.reduce((s, p) => s + (parseFloat(p['Total_Presupuesto']) || 0), 0) / pres.length : 0;
+  // Promedio presupuesto (todos los presupuestos del período)
+  const promPres = pres.length > 0 ? pres.reduce((s, p) => s + (parseFloat(p['SubTotal_Presupuesto']) || 0), 0) / pres.length : 0;
 
   // Promedio venta
   const promVenta = ventas.length > 0 ? montoVendido / ventas.length : 0;
@@ -457,6 +470,29 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+async function debugATO() {
+  try {
+    const pres = await fetchSheet('presupuestoProspecto');
+    const lines = [];
+    lines.push('TOTAL PRESUP: ' + pres.length);
+    lines.push('');
+    lines.push('=== VALORES UNICOS Asesor_Presupuesto ===');
+    const unicos = [...new Set(pres.map(p => String(p['Asesor_Presupuesto']||'null')))];
+    unicos.slice(0,20).forEach(v => lines.push('"' + v + '"'));
+    lines.push('');
+    lines.push('=== ULTIMOS 5 PRESUP ===');
+    pres.slice(-5).forEach((p,i) => {
+      lines.push('['+i+'] Asesor="'+p['Asesor_Presupuesto']+'" Estado='+p['Estado_Presupuesto']+' FechaPres='+p['Fecha_Presupuesto']+' FechaVenta='+p['Fecha_Venta']+' Sub='+p['SubTotal_Presupuesto']);
+    });
+    lines.push('');
+    lines.push('=== PRESUP VENDIDO (ultimos 3) ===');
+    pres.filter(p => String(p['Estado_Presupuesto']||'') === 'Vendido').slice(-3).forEach((p,i) => {
+      lines.push('['+i+'] Asesor="'+p['Asesor_Presupuesto']+'" Sub='+p['SubTotal_Presupuesto']+' FechaVenta='+p['Fecha_Venta']);
+    });
+    alert(lines.join('\n'));
+  } catch(e) { alert('Error: '+e.message); }
 }
 
 </script>
