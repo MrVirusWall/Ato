@@ -195,7 +195,6 @@ function selectATO(key, name, initial) {
   document.getElementById('tabMes').className = 'ptab active ' + key;
   document.getElementById('tabSem').className = 'ptab ' + key;
   loadData();
-  debugATO();
 }
 
 function logout() {
@@ -329,34 +328,40 @@ function render() {
   const k = currentATO.key;
   const inPeriod = currentTab === 'mes' ? inMes : inSemana;
 
-  // Visitas del ATO en período
-  const vis = DATA.visitas.filter(v => inPeriod(v['FechaHora_Visita']));
+  // Helper: motivo es Presupuesto
+  const esPresup = v => {
+    const m = String(v['Motivo_Visita'] || '').toLowerCase();
+    return m === 'presupuesto' || m.includes('presup');
+  };
+  // Helper: motivo es Cobranza
+  const esCobr = v => {
+    const m = String(v['Motivo_Visita'] || '').toLowerCase();
+    return m === 'cobranza' || m.includes('cobr');
+  };
 
-  // Visitas de Presupuesto realizadas (el ATO va a hacer el presupuesto)
-  const visPresup = vis.filter(v => {
-    const motivo = String(v['Motivo_Visita'] || '').toLowerCase();
-    const asesorVisita = String(v['Asesor_Visita'] || '').toLowerCase();
-    const estadoOk = String(v['Estado_Visita'] || '') === 'Realizada';
-    const esMio = isMyATO(v['Asesor_Visita']) || isMyATO(v['Asesor_Presupuesto_Visita']);
-    // Presupuesto visits: motivo includes presup, or asesor_visita is ATO
-    return estadoOk && (motivo.includes('presup')) && (esMio || asesorVisita !== '');
-  });
+  // Visitas del período (todas)
+  const visPeriodo = DATA.visitas.filter(v => inPeriod(v['FechaHora_Visita']));
+
+  // Visitas de Presupuesto realizadas asignadas al ATO
+  const visPresup = visPeriodo.filter(v =>
+    String(v['Estado_Visita'] || '') === 'Realizada' &&
+    esPresup(v) &&
+    isMyATO(v['Asesor_Visita'])
+  );
 
   // Visitas de Cobranza realizadas por ATO
-  const visCobr = vis.filter(v => {
-    const motivo = String(v['Motivo_Visita'] || '').toLowerCase();
-    const estadoOk = String(v['Estado_Visita'] || '') === 'Realizada';
-    const esMio = isMyATO(v['Asesor_Visita']);
-    return estadoOk && motivo.includes('cobr') && esMio;
-  });
+  const visCobr = visPeriodo.filter(v =>
+    String(v['Estado_Visita'] || '') === 'Realizada' &&
+    esCobr(v) &&
+    isMyATO(v['Asesor_Visita'])
+  );
 
-  // Presupuestos hechos por ATO
-  const pres = DATA.presupuestos.filter(p => {
-    const esMio = isMyATO(p['Asesor_Presupuesto']);
-    return esMio && inPeriod(p['Fecha_Presupuesto']);
-  });
+  // Presupuestos hechos por ATO en período
+  const pres = DATA.presupuestos.filter(p =>
+    isMyATO(p['Asesor_Presupuesto']) && inPeriod(p['Fecha_Presupuesto'])
+  );
 
-  // Ventas (estado Vendido)
+  // Ventas (estado Vendido) — usar Fecha_Presupuesto como fecha efectiva
   const ventas = pres.filter(p => String(p['Estado_Presupuesto'] || '') === 'Vendido');
 
   // Monto vendido
@@ -371,16 +376,13 @@ function render() {
   // Promedio venta
   const promVenta = ventas.length > 0 ? montoVendido / ventas.length : 0;
 
-  // Visitas canceladas del ATO (todas, no solo presup)
-  const visTotales = vis.filter(v => isMyATO(v['Asesor_Visita']));
+  // Visitas canceladas del ATO (todas las asignadas al ATO en el período)
+  const visTotales = visPeriodo.filter(v => isMyATO(v['Asesor_Visita']));
   const visCanceladas = visTotales.filter(v => String(v['Estado_Visita'] || '') === 'Cancelada');
   const pctCanceladas = visTotales.length > 0 ? (visCanceladas.length / visTotales.length * 100) : 0;
 
-  // Todas las visitas de presupuesto asignadas al ATO (para calcular canceladas de presup)
-  const visPresupAsignadas = vis.filter(v => {
-    const motivo = String(v['Motivo_Visita'] || '').toLowerCase();
-    return motivo.includes('presup') && isMyATO(v['Asesor_Visita']);
-  });
+  // Visitas de presupuesto asignadas al ATO (para canceladas de presup)
+  const visPresupAsignadas = visPeriodo.filter(v => esPresup(v) && isMyATO(v['Asesor_Visita']));
   const visPresupCanceladas = visPresupAsignadas.filter(v => String(v['Estado_Visita'] || '') === 'Cancelada');
   const pctPresupCanc = visPresupAsignadas.length > 0 ? (visPresupCanceladas.length / visPresupAsignadas.length * 100) : 0;
 
@@ -457,38 +459,6 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-async function debugATO() {
-  try {
-    const vis = await fetchSheet('Visitas');
-    const pres = await fetchSheet('documentosPresupuesto');
-    const lines = [];
-
-    lines.push('=== COLS VISITAS (fila 1) ===');
-    if(vis[0]) Object.keys(vis[0]).forEach(k => lines.push(k + ' = ' + JSON.stringify(vis[0][k])));
-
-    lines.push('');
-    lines.push('=== ULTIMAS 5 VISITAS REALIZADAS ===');
-    vis.filter(v => String(v['Estado_Visita']||'') === 'Realizada').slice(-5).forEach((v,i) => {
-      lines.push('['+i+'] Asesor_Visita='+v['Asesor_Visita']+' | Motivo='+v['Motivo_Visita']+' | Fecha='+v['FechaHora_Visita']);
-    });
-
-    lines.push('');
-    lines.push('=== ULTIMOS 5 PRESUPUESTOS ===');
-    pres.slice(-5).forEach((p,i) => {
-      lines.push('['+i+'] Asesor_Presupuesto='+p['Asesor_Presupuesto']+' | Estado='+p['Estado_Presupuesto']+' | Fecha='+p['Fecha_Presupuesto']);
-    });
-
-    lines.push('');
-    lines.push('=== PRESUP CON ESTADO VENDIDO (ultimos 3) ===');
-    pres.filter(p => String(p['Estado_Presupuesto']||'') === 'Vendido').slice(-3).forEach((p,i) => {
-      lines.push('['+i+'] Asesor='+p['Asesor_Presupuesto']+' | Total='+p['Total_Presupuesto']+' | Fecha='+p['Fecha_Presupuesto']);
-    });
-
-    alert(lines.join('\n'));
-  } catch(e) {
-    alert('Error debug: ' + e.message);
-  }
-}
 </script>
 </body>
 </html>
