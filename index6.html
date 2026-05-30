@@ -195,6 +195,7 @@ function selectATO(key, name, initial) {
   document.getElementById('tabMes').className = 'ptab active ' + key;
   document.getElementById('tabSem').className = 'ptab ' + key;
   loadData();
+  debugATO();
 }
 
 function logout() {
@@ -364,13 +365,6 @@ function render() {
     isMyATO(v['Asesor_Visita'])
   );
 
-  // Visitas de Cobranza pendientes por ATO
-  const visCobrPend = visPeriodo.filter(v =>
-    String(v['Estado_Visita'] || '') === 'Pendiente' &&
-    esCobr(v) &&
-    isMyATO(v['Asesor_Visita'])
-  );
-
   // Presupuestos hechos por ATO en período (por Fecha_Presupuesto)
   const pres = DATA.presupuestos.filter(p =>
     isMyATO(p['Asesor_Presupuesto']) && inPeriod(p['Fecha_Presupuesto'])
@@ -441,18 +435,8 @@ function render() {
         <div class="kpi-value ${k}">${visPresup.length}</div>
       </div>
       <div class="kpi-card full-width">
-        <div class="kpi-label">Visitas Cobranza</div>
-        <div style="display:flex;align-items:baseline;gap:16px;margin-top:4px">
-          <div>
-            <div class="kpi-value ${k}">${visCobr.length}</div>
-            <div class="kpi-sub">realizadas</div>
-          </div>
-          <div style="width:1px;height:36px;background:var(--border);align-self:center"></div>
-          <div>
-            <div class="kpi-value" style="font-size:22px;color:var(--muted)">${visCobrPend.length}</div>
-            <div class="kpi-sub">pendientes</div>
-          </div>
-        </div>
+        <div class="kpi-label">Visitas Cobranza Realizadas</div>
+        <div class="kpi-value ${k}">${visCobr.length}</div>
       </div>
     </div>
 
@@ -486,6 +470,29 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+async function debugATO() {
+  try {
+    const pres = await fetchSheet('presupuestoProspecto');
+    const lines = [];
+    lines.push('TOTAL PRESUP: ' + pres.length);
+    lines.push('');
+    lines.push('=== VALORES UNICOS Asesor_Presupuesto ===');
+    const unicos = [...new Set(pres.map(p => String(p['Asesor_Presupuesto']||'null')))];
+    unicos.slice(0,20).forEach(v => lines.push('"' + v + '"'));
+    lines.push('');
+    lines.push('=== ULTIMOS 5 PRESUP ===');
+    pres.slice(-5).forEach((p,i) => {
+      lines.push('['+i+'] Asesor="'+p['Asesor_Presupuesto']+'" Estado='+p['Estado_Presupuesto']+' FechaPres='+p['Fecha_Presupuesto']+' FechaVenta='+p['Fecha_Venta']+' Sub='+p['SubTotal_Presupuesto']);
+    });
+    lines.push('');
+    lines.push('=== PRESUP VENDIDO (ultimos 3) ===');
+    pres.filter(p => String(p['Estado_Presupuesto']||'') === 'Vendido').slice(-3).forEach((p,i) => {
+      lines.push('['+i+'] Asesor="'+p['Asesor_Presupuesto']+'" Sub='+p['SubTotal_Presupuesto']+' FechaVenta='+p['Fecha_Venta']);
+    });
+    alert(lines.join('\n'));
+  } catch(e) { alert('Error: '+e.message); }
 }
 
 </script>
