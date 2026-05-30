@@ -109,16 +109,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100
 .semana-badge{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
 .semana-txt{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
 .semana-val{font-family:var(--fd);font-size:13px;font-weight:600;}
-
-/* PIN */
-.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--muted);transition:all 0.15s;}
-.pin-dot.filled{background:var(--text);border-color:var(--text);}
-.pin-dot.filled.saul{background:var(--saul);border-color:var(--saul);}
-.pin-dot.filled.gabriel{background:var(--gabriel);border-color:var(--gabriel);}
-.pin-key{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--fd);font-size:22px;font-weight:600;border-radius:12px;padding:16px;cursor:pointer;transition:all 0.1s;-webkit-tap-highlight-color:transparent;}
-.pin-key:active{background:var(--surface2);transform:scale(0.95);}
-@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
-.shake{animation:shake 0.35s ease;}
 </style>
 </head>
 <body>
@@ -130,49 +120,20 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100
     <div class="pin-subtitle">Panel ATO</div>
   </div>
   <div class="pin-cards">
-    <button class="ato-btn saul" onclick="startPin('saul','SAÚL','S')">
+    <button class="ato-btn saul" onclick="selectATO('saul','SAÚL','S')">
       <div class="ato-avatar">S</div>
       <div class="ato-info">
         <div class="ato-name">SAÚL</div>
         <div class="ato-role">Asesor Técnico de Obra</div>
       </div>
     </button>
-    <button class="ato-btn gabriel" onclick="startPin('gabriel','GABRIEL','G')">
+    <button class="ato-btn gabriel" onclick="selectATO('gabriel','GABRIEL','G')">
       <div class="ato-avatar">G</div>
       <div class="ato-info">
         <div class="ato-name">GABRIEL</div>
         <div class="ato-role">Asesor Técnico de Obra</div>
       </div>
     </button>
-  </div>
-</div>
-
-<!-- PIN SCREEN -->
-<div class="pin-screen hidden" id="pinEntry">
-  <div style="text-align:center">
-    <div class="pin-logo">SECA<span>FORTE</span></div>
-    <div class="pin-subtitle" id="pinSubtitle">Ingresá tu PIN</div>
-  </div>
-  <div style="width:100%;max-width:280px;display:flex;flex-direction:column;align-items:center;gap:20px">
-    <div style="display:flex;gap:12px" id="pinDots">
-      <div class="pin-dot"></div><div class="pin-dot"></div>
-      <div class="pin-dot"></div><div class="pin-dot"></div>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%">
-      <button class="pin-key" onclick="pinKey('1')">1</button>
-      <button class="pin-key" onclick="pinKey('2')">2</button>
-      <button class="pin-key" onclick="pinKey('3')">3</button>
-      <button class="pin-key" onclick="pinKey('4')">4</button>
-      <button class="pin-key" onclick="pinKey('5')">5</button>
-      <button class="pin-key" onclick="pinKey('6')">6</button>
-      <button class="pin-key" onclick="pinKey('7')">7</button>
-      <button class="pin-key" onclick="pinKey('8')">8</button>
-      <button class="pin-key" onclick="pinKey('9')">9</button>
-      <button class="pin-key" onclick="pinBack()" style="font-size:18px">⌫</button>
-      <button class="pin-key" onclick="pinKey('0')">0</button>
-      <button class="pin-key" onclick="cancelPin()" style="font-size:11px;letter-spacing:1px">✕</button>
-    </div>
-    <div id="pinError" style="font-size:12px;color:var(--red);letter-spacing:1px;height:16px;text-transform:uppercase"></div>
   </div>
 </div>
 
@@ -215,70 +176,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100
 <script>
 const SHEET_ID = '1PwYUmaX800n4H_kYGWlqleAbdS5h3bBivHswaAMem6Y';
 
+// ATO identifiers (from userMemories)
 const ATO_IDS = {
   saul: ['US0005', 'saul', 'saúl', 'saul garcia', 'saul asesor'],
   gabriel: ['e8c0fd26', 'gabriel', 'gabriel asesor']
 };
 
-const ATO_PINS = { saul: '7285', gabriel: '4224' };
-
 let currentATO = null;
 let currentTab = 'mes';
 let DATA = { visitas: [], presupuestos: [] };
-let pinBuffer = '';
-let pendingATO = null;
-
-function startPin(key, name, initial) {
-  pendingATO = { key, name, initial };
-  pinBuffer = '';
-  updatePinDots(key);
-  document.getElementById('pinError').textContent = '';
-  document.getElementById('pinSubtitle').textContent = name;
-  document.getElementById('pinScreen').classList.add('hidden');
-  document.getElementById('pinEntry').classList.remove('hidden');
-}
-
-function pinKey(d) {
-  if (pinBuffer.length >= 4) return;
-  pinBuffer += d;
-  updatePinDots(pendingATO.key);
-  if (pinBuffer.length === 4) {
-    setTimeout(checkPin, 120);
-  }
-}
-
-function pinBack() {
-  pinBuffer = pinBuffer.slice(0, -1);
-  updatePinDots(pendingATO.key);
-}
-
-function cancelPin() {
-  pinBuffer = '';
-  pendingATO = null;
-  document.getElementById('pinEntry').classList.add('hidden');
-  document.getElementById('pinScreen').classList.remove('hidden');
-}
-
-function updatePinDots(key) {
-  const dots = document.querySelectorAll('.pin-dot');
-  dots.forEach((d, i) => {
-    d.className = 'pin-dot' + (i < pinBuffer.length ? ' filled ' + key : '');
-  });
-}
-
-function checkPin() {
-  if (pinBuffer === ATO_PINS[pendingATO.key]) {
-    selectATO(pendingATO.key, pendingATO.name, pendingATO.initial);
-    document.getElementById('pinEntry').classList.add('hidden');
-  } else {
-    const dots = document.getElementById('pinDots');
-    dots.classList.add('shake');
-    setTimeout(() => dots.classList.remove('shake'), 400);
-    document.getElementById('pinError').textContent = 'PIN incorrecto';
-    pinBuffer = '';
-    updatePinDots(pendingATO.key);
-  }
-}
 
 function selectATO(key, name, initial) {
   currentATO = { key, name, initial };
@@ -293,11 +199,8 @@ function selectATO(key, name, initial) {
 
 function logout() {
   currentATO = null;
-  pinBuffer = '';
-  pendingATO = null;
-  document.getElementById('pinEntry').classList.add('hidden');
-  document.getElementById('app').classList.remove('vis');
   document.getElementById('pinScreen').classList.remove('hidden');
+  document.getElementById('app').classList.remove('vis');
 }
 
 function setTab(tab) {
