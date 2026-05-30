@@ -195,6 +195,7 @@ function selectATO(key, name, initial) {
   document.getElementById('tabMes').className = 'ptab active ' + key;
   document.getElementById('tabSem').className = 'ptab ' + key;
   loadData();
+  debugATO();
 }
 
 function logout() {
@@ -454,6 +455,39 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+async function debugATO() {
+  try {
+    const vis = await fetchSheet('Visitas');
+    const pres = await fetchSheet('documentosPresupuesto');
+    const lines = [];
+
+    lines.push('=== COLS VISITAS (fila 1) ===');
+    if(vis[0]) Object.keys(vis[0]).forEach(k => lines.push(k + ' = ' + JSON.stringify(vis[0][k])));
+
+    lines.push('');
+    lines.push('=== ULTIMAS 5 VISITAS REALIZADAS ===');
+    vis.filter(v => String(v['Estado_Visita']||'') === 'Realizada').slice(-5).forEach((v,i) => {
+      lines.push('['+i+'] Asesor_Visita='+v['Asesor_Visita']+' | Motivo='+v['Motivo_Visita']+' | Fecha='+v['FechaHora_Visita']);
+    });
+
+    lines.push('');
+    lines.push('=== ULTIMOS 5 PRESUPUESTOS ===');
+    pres.slice(-5).forEach((p,i) => {
+      lines.push('['+i+'] Asesor_Presupuesto='+p['Asesor_Presupuesto']+' | Estado='+p['Estado_Presupuesto']+' | Fecha='+p['Fecha_Presupuesto']);
+    });
+
+    lines.push('');
+    lines.push('=== PRESUP CON ESTADO VENDIDO (ultimos 3) ===');
+    pres.filter(p => String(p['Estado_Presupuesto']||'') === 'Vendido').slice(-3).forEach((p,i) => {
+      lines.push('['+i+'] Asesor='+p['Asesor_Presupuesto']+' | Total='+p['Total_Presupuesto']+' | Fecha='+p['Fecha_Presupuesto']);
+    });
+
+    alert(lines.join('\n'));
+  } catch(e) {
+    alert('Error debug: ' + e.message);
+  }
 }
 </script>
 </body>
