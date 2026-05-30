@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Secaforte · ATO Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0d0f14;--surface:#161921;--surface2:#1e2330;--border:rgba(255,255,255,0.07);
+  --saul:#e8b04a;--saul-dim:rgba(232,176,74,0.1);--saul-glow:rgba(232,176,74,0.25);
+  --gabriel:#4ab8e8;--gabriel-dim:rgba(74,184,232,0.1);--gabriel-glow:rgba(74,184,232,0.25);
+  --green:#3dcc8a;--red:#e84a6a;--muted:rgba(255,255,255,0.35);--text:#f0f2f7;
+  --fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh;-webkit-text-size-adjust:100%;}
+
+/* LOGIN */
+.pin-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:32px;}
+.pin-screen.hidden{display:none;}
+.pin-logo{font-family:var(--fd);font-size:28px;font-weight:800;letter-spacing:4px;text-align:center;}
+.pin-logo span{color:var(--muted);}
+.pin-subtitle{font-size:13px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;text-align:center;margin-top:-20px;}
+.pin-cards{display:flex;flex-direction:column;gap:12px;width:100%;max-width:320px;}
+.ato-btn{padding:18px 20px;border-radius:14px;border:1.5px solid;background:transparent;cursor:pointer;display:flex;align-items:center;gap:14px;transition:all 0.2s;width:100%;}
+.ato-btn.saul{border-color:var(--saul);color:var(--saul);}
+.ato-btn.saul:active{background:var(--saul-dim);}
+.ato-btn.gabriel{border-color:var(--gabriel);color:var(--gabriel);}
+.ato-btn.gabriel:active{background:var(--gabriel-dim);}
+.ato-avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:16px;font-weight:700;flex-shrink:0;}
+.ato-btn.saul .ato-avatar{background:var(--saul-dim);}
+.ato-btn.gabriel .ato-avatar{background:var(--gabriel-dim);}
+.ato-info{text-align:left;}
+.ato-name{font-family:var(--fd);font-size:18px;font-weight:700;letter-spacing:1px;}
+.ato-role{font-size:12px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+
+/* MAIN APP */
+#app{display:none;}
+#app.vis{display:block;}
+
+/* HEADER */
+.header{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:50;}
+.header-brand{font-family:var(--fd);font-size:16px;font-weight:800;letter-spacing:3px;}
+.header-brand span{color:var(--muted);}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.user-pill{padding:5px 12px;border-radius:20px;border:1.5px solid;font-family:var(--fd);font-size:13px;font-weight:700;letter-spacing:1px;}
+.user-pill.saul{border-color:var(--saul);color:var(--saul);}
+.user-pill.gabriel{border-color:var(--gabriel);color:var(--gabriel);}
+.logout-btn{background:none;border:none;color:var(--muted);font-size:11px;letter-spacing:1px;cursor:pointer;text-transform:uppercase;padding:4px 8px;}
+
+/* CONTENT */
+.content{padding:16px;}
+
+/* PERIOD TABS */
+.period-tabs{display:flex;gap:0;background:var(--surface);border-radius:10px;border:1px solid var(--border);overflow:hidden;margin-bottom:16px;}
+.ptab{flex:1;padding:10px 0;text-align:center;font-family:var(--fd);font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;background:none;border:none;color:var(--muted);cursor:pointer;transition:all 0.15s;}
+.ptab.active.saul{background:var(--saul-dim);color:var(--saul);}
+.ptab.active.gabriel{background:var(--gabriel-dim);color:var(--gabriel);}
+
+/* SECTION LABEL */
+.section-label{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin:20px 0 10px;}
+
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.kpi-card{background:var(--surface);border-radius:12px;border:1px solid var(--border);padding:14px 14px 12px;}
+.kpi-card.highlight-saul{border-color:var(--saul-glow);background:var(--saul-dim);}
+.kpi-card.highlight-gabriel{border-color:var(--gabriel-glow);background:var(--gabriel-dim);}
+.kpi-card.full-width{grid-column:1/-1;}
+.kpi-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;line-height:1.3;}
+.kpi-value{font-family:var(--fd);font-size:28px;font-weight:800;line-height:1;}
+.kpi-value.saul{color:var(--saul);}
+.kpi-value.gabriel{color:var(--gabriel);}
+.kpi-value.small{font-size:20px;}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:4px;}
+
+/* CONVERSION BAR */
+.conv-bar{background:var(--surface);border-radius:12px;border:1px solid var(--border);padding:14px;margin-bottom:10px;}
+.conv-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;}
+.conv-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.conv-pct{font-family:var(--fd);font-size:22px;font-weight:800;}
+.conv-pct.saul{color:var(--saul);}
+.conv-pct.gabriel{color:var(--gabriel);}
+.conv-track{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;}
+.conv-fill{height:100%;border-radius:3px;transition:width 0.5s ease;}
+.conv-fill.saul{background:var(--saul);}
+.conv-fill.gabriel{background:var(--gabriel);}
+
+/* CANCELADAS BAR */
+.cancel-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;background:rgba(232,74,106,0.12);border:1px solid rgba(232,74,106,0.25);font-size:12px;font-weight:600;color:var(--red);}
+
+/* LOADING */
+.loading-bar{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;letter-spacing:2px;text-transform:uppercase;}
+.loader-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--muted);animation:pulse 1.2s ease-in-out infinite;}
+.loader-dot:nth-child(2){animation-delay:0.2s;}
+.loader-dot:nth-child(3){animation-delay:0.4s;}
+@keyframes pulse{0%,100%{opacity:0.2}50%{opacity:1}}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface2);border:1px solid var(--border);padding:10px 20px;border-radius:10px;font-size:13px;letter-spacing:1px;transition:transform 0.3s ease;z-index:100;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* REFRESH BTN */
+.refresh-row{text-align:center;padding:8px 0 20px;}
+.refresh-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:8px 20px;border-radius:8px;font-family:var(--fd);font-size:12px;letter-spacing:2px;cursor:pointer;text-transform:uppercase;}
+.refresh-btn:active{opacity:0.7;}
+
+/* SEMANA INDICATOR */
+.semana-badge{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
+.semana-txt{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.semana-val{font-family:var(--fd);font-size:13px;font-weight:600;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="pin-screen" id="pinScreen">
+  <div style="text-align:center">
+    <div class="pin-logo">SECA<span>FORTE</span></div>
+    <div class="pin-subtitle">Panel ATO</div>
+  </div>
+  <div class="pin-cards">
+    <button class="ato-btn saul" onclick="selectATO('saul','SAÚL','S')">
+      <div class="ato-avatar">S</div>
+      <div class="ato-info">
+        <div class="ato-name">SAÚL</div>
+        <div class="ato-role">Asesor Técnico de Obra</div>
+      </div>
+    </button>
+    <button class="ato-btn gabriel" onclick="selectATO('gabriel','GABRIEL','G')">
+      <div class="ato-avatar">G</div>
+      <div class="ato-info">
+        <div class="ato-name">GABRIEL</div>
+        <div class="ato-role">Asesor Técnico de Obra</div>
+      </div>
+    </button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="header">
+    <div class="header-brand">SECA<span>FORTE</span></div>
+    <div class="hdr-right">
+      <div class="user-pill" id="userPill">---</div>
+      <button class="logout-btn" onclick="logout()">✕</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="period-tabs">
+      <button class="ptab active" id="tabMes" onclick="setTab('mes')">MES</button>
+      <button class="ptab" id="tabSem" onclick="setTab('sem')">SEMANA</button>
+    </div>
+
+    <div id="semBadge" class="semana-badge" style="display:none">
+      <span class="semana-txt">Semana en curso</span>
+      <span class="semana-val" id="semBadgeVal">—</span>
+    </div>
+
+    <div id="mainContent">
+      <div class="loading-bar">
+        <span class="loader-dot"></span>
+        <span class="loader-dot"></span>
+        <span class="loader-dot"></span>
+      </div>
+    </div>
+
+    <div class="refresh-row">
+      <button class="refresh-btn" onclick="reloadData()">↺ Actualizar datos</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SHEET_ID = '1PwYUmaX800n4H_kYGWlqleAbdS5h3bBivHswaAMem6Y';
+
+// ATO identifiers (from userMemories)
+const ATO_IDS = {
+  saul: ['US0005', 'saul', 'saúl', 'saul garcia', 'saul asesor'],
+  gabriel: ['e8c0fd26', 'gabriel', 'gabriel asesor']
+};
+
+let currentATO = null;
+let currentTab = 'mes';
+let DATA = { visitas: [], presupuestos: [] };
+
+function selectATO(key, name, initial) {
+  currentATO = { key, name, initial };
+  document.getElementById('pinScreen').classList.add('hidden');
+  document.getElementById('app').classList.add('vis');
+  document.getElementById('userPill').textContent = name;
+  document.getElementById('userPill').className = 'user-pill ' + key;
+  document.getElementById('tabMes').className = 'ptab active ' + key;
+  document.getElementById('tabSem').className = 'ptab ' + key;
+  loadData();
+}
+
+function logout() {
+  currentATO = null;
+  document.getElementById('pinScreen').classList.remove('hidden');
+  document.getElementById('app').classList.remove('vis');
+}
+
+function setTab(tab) {
+  currentTab = tab;
+  const k = currentATO.key;
+  document.getElementById('tabMes').className = 'ptab' + (tab === 'mes' ? ' active ' + k : ' ' + k);
+  document.getElementById('tabSem').className = 'ptab' + (tab === 'sem' ? ' active ' + k : ' ' + k);
+  document.getElementById('semBadge').style.display = tab === 'sem' ? 'flex' : 'none';
+  render();
+}
+
+// ---- Date helpers ----
+function parseGVizDate(v) {
+  if (!v) return null;
+  const m = String(v).match(/Date\((\d+),(\d+),(\d+)/);
+  if (m) return new Date(+m[1], +m[2], +m[3]);
+  const d = new Date(v);
+  return isNaN(d) ? null : d;
+}
+
+function getMesActual() {
+  const now = new Date();
+  return { y: now.getFullYear(), m: now.getMonth() };
+}
+
+function inMes(dateVal) {
+  const d = parseGVizDate(dateVal);
+  if (!d) return false;
+  const { y, m } = getMesActual();
+  return d.getFullYear() === y && d.getMonth() === m;
+}
+
+// Semanas: misma lógica que dashboard VL (semanas del mes por días)
+function getSemanas() {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const weeks = [];
+  let day = 1;
+  while (day <= daysInMonth) {
+    const start = day;
+    const end = Math.min(day + 6, daysInMonth);
+    weeks.push({ start: new Date(y, m, start), end: new Date(y, m, end) });
+    day = end + 1;
+  }
+  return weeks;
+}
+
+function getCurrentWeekIdx() {
+  const now = new Date();
+  const weeks = getSemanas();
+  for (let i = 0; i < weeks.length; i++) {
+    if (now >= weeks[i].start && now <= new Date(weeks[i].end.getFullYear(), weeks[i].end.getMonth(), weeks[i].end.getDate(), 23, 59, 59)) return i;
+  }
+  return weeks.length - 1;
+}
+
+function inSemana(dateVal) {
+  const d = parseGVizDate(dateVal);
+  if (!d) return false;
+  const weeks = getSemanas();
+  const idx = getCurrentWeekIdx();
+  if (idx < 0) return false;
+  const { start, end } = weeks[idx];
+  const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59);
+  return d >= start && d <= endDay;
+}
+
+function getSemanaLabel() {
+  const weeks = getSemanas();
+  const idx = getCurrentWeekIdx();
+  const w = weeks[idx];
+  const fmt = d => d.getDate() + '/' + (d.getMonth() + 1);
+  return 'Semana ' + (idx + 1) + ': ' + fmt(w.start) + ' — ' + fmt(w.end);
+}
+
+// ---- ATO matching ----
+function isMyATO(val) {
+  if (!val) return false;
+  const v = String(val).toLowerCase().trim();
+  const ids = ATO_IDS[currentATO.key];
+  return ids.some(id => v === id.toLowerCase() || v.includes(id.toLowerCase()));
+}
+
+// ---- Fetch sheets ----
+async function fetchSheet(sheetName) {
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+  const res = await fetch(url);
+  const txt = await res.text();
+  const json = JSON.parse(txt.substring(47).slice(0, -2));
+  if (!json.table || !json.table.rows) return [];
+  const cols = json.table.cols.map(c => c.label || c.id || '');
+  return json.table.rows.map(row => {
+    const obj = {};
+    row.c.forEach((cell, i) => {
+      obj[cols[i]] = cell ? (cell.v !== undefined ? cell.v : cell.f) : null;
+    });
+    return obj;
+  });
+}
+
+async function loadData() {
+  document.getElementById('mainContent').innerHTML = '<div class="loading-bar"><span class="loader-dot"></span><span class="loader-dot"></span><span class="loader-dot"></span></div>';
+  try {
+    const [vis, pres] = await Promise.all([
+      fetchSheet('Visitas'),
+      fetchSheet('documentosPresupuesto')
+    ]);
+    DATA.visitas = vis;
+    DATA.presupuestos = pres;
+    render();
+  } catch(e) {
+    document.getElementById('mainContent').innerHTML = '<div class="loading-bar" style="color:#e84a6a">Error al cargar datos. Verificá tu conexión.</div>';
+    console.error(e);
+  }
+}
+
+function reloadData() {
+  loadData();
+  showToast('Actualizando...');
+}
+
+// ---- Render ----
+function render() {
+  const k = currentATO.key;
+  const inPeriod = currentTab === 'mes' ? inMes : inSemana;
+
+  // Visitas del ATO en período
+  const vis = DATA.visitas.filter(v => inPeriod(v['FechaHora_Visita']));
+
+  // Visitas de Presupuesto realizadas (el ATO va a hacer el presupuesto)
+  const visPresup = vis.filter(v => {
+    const motivo = String(v['Motivo_Visita'] || '').toLowerCase();
+    const asesorVisita = String(v['Asesor_Visita'] || '').toLowerCase();
+    const estadoOk = String(v['Estado_Visita'] || '') === 'Realizada';
+    const esMio = isMyATO(v['Asesor_Visita']) || isMyATO(v['Asesor_Presupuesto_Visita']);
+    // Presupuesto visits: motivo includes presup, or asesor_visita is ATO
+    return estadoOk && (motivo.includes('presup')) && (esMio || asesorVisita !== '');
+  });
+
+  // Visitas de Cobranza realizadas por ATO
+  const visCobr = vis.filter(v => {
+    const motivo = String(v['Motivo_Visita'] || '').toLowerCase();
+    const estadoOk = String(v['Estado_Visita'] || '') === 'Realizada';
+    const esMio = isMyATO(v['Asesor_Visita']);
+    return estadoOk && motivo.includes('cobr') && esMio;
+  });
+
+  // Presupuestos hechos por ATO
+  const pres = DATA.presupuestos.filter(p => {
+    const esMio = isMyATO(p['Asesor_Presupuesto']);
+    return esMio && inPeriod(p['Fecha_Presupuesto']);
+  });
+
+  // Ventas (estado Vendido)
+  const ventas = pres.filter(p => String(p['Estado_Presupuesto'] || '') === 'Vendido');
+
+  // Monto vendido
+  const montoVendido = ventas.reduce((s, p) => s + (parseFloat(p['Total_Presupuesto']) || 0), 0);
+
+  // Efectividad de cierre
+  const efectividad = pres.length > 0 ? (ventas.length / pres.length * 100) : 0;
+
+  // Promedio presupuesto
+  const promPres = pres.length > 0 ? pres.reduce((s, p) => s + (parseFloat(p['Total_Presupuesto']) || 0), 0) / pres.length : 0;
+
+  // Promedio venta
+  const promVenta = ventas.length > 0 ? montoVendido / ventas.length : 0;
+
+  // Visitas canceladas del ATO (todas, no solo presup)
+  const visTotales = vis.filter(v => isMyATO(v['Asesor_Visita']));
+  const visCanceladas = visTotales.filter(v => String(v['Estado_Visita'] || '') === 'Cancelada');
+  const pctCanceladas = visTotales.length > 0 ? (visCanceladas.length / visTotales.length * 100) : 0;
+
+  // Todas las visitas de presupuesto asignadas al ATO (para calcular canceladas de presup)
+  const visPresupAsignadas = vis.filter(v => {
+    const motivo = String(v['Motivo_Visita'] || '').toLowerCase();
+    return motivo.includes('presup') && isMyATO(v['Asesor_Visita']);
+  });
+  const visPresupCanceladas = visPresupAsignadas.filter(v => String(v['Estado_Visita'] || '') === 'Cancelada');
+  const pctPresupCanc = visPresupAsignadas.length > 0 ? (visPresupCanceladas.length / visPresupAsignadas.length * 100) : 0;
+
+  // Semana badge
+  document.getElementById('semBadgeVal').textContent = getSemanaLabel();
+
+  // Build HTML
+  const fmt = n => Math.round(n).toLocaleString('es-BO');
+  const fmtDec = n => n.toFixed(1);
+
+  document.getElementById('mainContent').innerHTML = `
+    <div class="section-label">Ventas</div>
+    <div class="kpi-grid">
+      <div class="kpi-card highlight-${k} full-width">
+        <div class="kpi-label">Monto Vendido</div>
+        <div class="kpi-value ${k}">Bs ${fmt(montoVendido)}</div>
+        <div class="kpi-sub">${ventas.length} venta${ventas.length !== 1 ? 's' : ''} cerrada${ventas.length !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Promedio Venta</div>
+        <div class="kpi-value ${k} small">Bs ${fmt(promVenta)}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Promedio Presup.</div>
+        <div class="kpi-value ${k} small">Bs ${fmt(promPres)}</div>
+      </div>
+    </div>
+
+    <div class="section-label">Actividad</div>
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Presupuestos Hechos</div>
+        <div class="kpi-value ${k}">${pres.length}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Visitas Presup. Realizadas</div>
+        <div class="kpi-value ${k}">${visPresup.length}</div>
+      </div>
+      <div class="kpi-card full-width">
+        <div class="kpi-label">Visitas Cobranza Realizadas</div>
+        <div class="kpi-value ${k}">${visCobr.length}</div>
+      </div>
+    </div>
+
+    <div class="section-label">Efectividad</div>
+    <div class="conv-bar">
+      <div class="conv-header">
+        <span class="conv-label">Tasa de cierre</span>
+        <span class="conv-pct ${k}">${fmtDec(efectividad)}%</span>
+      </div>
+      <div class="conv-track"><div class="conv-fill ${k}" style="width:${Math.min(efectividad,100)}%"></div></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">${ventas.length} vendido${ventas.length !== 1 ? 's' : ''} de ${pres.length} presupuesto${pres.length !== 1 ? 's' : ''}</div>
+    </div>
+
+    <div class="section-label">Visitas Canceladas</div>
+    <div class="kpi-card" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="kpi-label" style="margin:0">Total asignadas al ATO</div>
+        <span class="cancel-pill">${fmtDec(pctCanceladas)}% cancelado</span>
+      </div>
+      <div style="font-size:12px;color:var(--muted)">${visCanceladas.length} canceladas de ${visTotales.length} asignadas</div>
+      ${visPresupAsignadas.length > 0 ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Solo visitas de presupuesto</div>
+        <div style="font-size:12px;color:var(--muted)">${visPresupCanceladas.length} canceladas de ${visPresupAsignadas.length} → <span style="color:var(--red);font-weight:600">${fmtDec(pctPresupCanc)}%</span></div>
+      </div>` : ''}
+    </div>
+  `;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
