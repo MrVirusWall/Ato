@@ -131,21 +131,18 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100
 
 /* ADMIN - comparativo lado a lado */
 .admin-content{padding:16px;}
-.cmp-header{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:4px;padding:0 2px;}
-.cmp-name{font-family:var(--fd);font-size:12px;font-weight:700;letter-spacing:2px;text-align:center;padding:8px;border-radius:8px;}
+.cmp-header{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px;padding:0 2px;}
+.cmp-name{font-family:var(--fd);font-size:13px;font-weight:700;letter-spacing:2px;text-align:center;padding:8px;border-radius:8px;}
 .cmp-name.saul{color:var(--saul);background:var(--saul-dim);}
 .cmp-name.gabriel{color:var(--gabriel);background:var(--gabriel-dim);}
-.cmp-name.total{color:var(--text);background:var(--surface2);border:1px solid var(--border);}
-.cmp-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;}
+.cmp-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;}
 .cmp-cell{background:var(--surface);border-radius:12px;border:1px solid var(--border);padding:12px;}
 .cmp-cell.win-saul{border-color:var(--saul-glow);}
 .cmp-cell.win-gabriel{border-color:var(--gabriel-glow);}
-.cmp-cell.total-cell{background:var(--surface2);}
 .cmp-metric{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
-.cmp-val{font-family:var(--fd);font-size:20px;font-weight:800;}
+.cmp-val{font-family:var(--fd);font-size:22px;font-weight:800;}
 .cmp-val.saul{color:var(--saul);}
 .cmp-val.gabriel{color:var(--gabriel);}
-.cmp-val.total{color:var(--text);}
 .cmp-sub{font-size:10px;color:var(--muted);margin-top:3px;}
 .cmp-divider{grid-column:1/-1;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);padding:8px 0 4px;}
 
@@ -571,55 +568,46 @@ function renderAdmin() {
     <div class="cmp-header">
       <div class="cmp-name saul">SAÚL</div>
       <div class="cmp-name gabriel">GABRIEL</div>
-      <div class="cmp-name total">TOTAL</div>
     </div>
 
     <div class="cmp-row">
-      <div class="cmp-cell ${ws1}"><div class="cmp-metric">Monto Vendido</div><div class="cmp-val saul" style="font-size:16px">Bs ${fmt(s.montoVendido)}</div><div class="cmp-sub">${s.ventas} venta${s.ventas!==1?'s':''}</div></div>
-      <div class="cmp-cell ${wg1}"><div class="cmp-metric">Monto Vendido</div><div class="cmp-val gabriel" style="font-size:16px">Bs ${fmt(g.montoVendido)}</div><div class="cmp-sub">${g.ventas} venta${g.ventas!==1?'s':''}</div></div>
-      <div class="cmp-cell total-cell"><div class="cmp-metric">Total</div><div class="cmp-val total" style="font-size:16px">Bs ${fmt(s.montoVendido+g.montoVendido)}</div><div class="cmp-sub">${s.ventas+g.ventas} ventas</div></div>
+      <div class="cmp-cell ${ws1}"><div class="cmp-metric">Monto Vendido</div><div class="cmp-val saul" style="font-size:18px">Bs ${fmt(s.montoVendido)}</div><div class="cmp-sub">${s.ventas} venta${s.ventas!==1?'s':''}</div></div>
+      <div class="cmp-cell ${wg1}"><div class="cmp-metric">Monto Vendido</div><div class="cmp-val gabriel" style="font-size:18px">Bs ${fmt(g.montoVendido)}</div><div class="cmp-sub">${g.ventas} venta${g.ventas!==1?'s':''}</div></div>
     </div>
 
     <div class="cmp-row">
       <div class="cmp-cell ${ws2}"><div class="cmp-metric">Presupuestos</div><div class="cmp-val saul">${s.pres}</div></div>
       <div class="cmp-cell ${wg2}"><div class="cmp-metric">Presupuestos</div><div class="cmp-val gabriel">${g.pres}</div></div>
-      <div class="cmp-cell total-cell"><div class="cmp-metric">Total</div><div class="cmp-val total">${s.pres+g.pres}</div></div>
     </div>
 
     <div class="cmp-row">
       <div class="cmp-cell ${ws3}"><div class="cmp-metric">Visitas Presup.</div><div class="cmp-val saul">${s.visPresup}</div></div>
       <div class="cmp-cell ${wg3}"><div class="cmp-metric">Visitas Presup.</div><div class="cmp-val gabriel">${g.visPresup}</div></div>
-      <div class="cmp-cell total-cell"><div class="cmp-metric">Total</div><div class="cmp-val total">${s.visPresup+g.visPresup}</div></div>
     </div>
 
     <div class="cmp-row">
-      <div class="cmp-cell ${ws4}"><div class="cmp-metric">Cobranza</div><div class="cmp-val saul">${s.visCobr}</div><div class="cmp-sub">${s.visCobrPend} pend.</div></div>
-      <div class="cmp-cell ${wg4}"><div class="cmp-metric">Cobranza</div><div class="cmp-val gabriel">${g.visCobr}</div><div class="cmp-sub">${g.visCobrPend} pend.</div></div>
-      <div class="cmp-cell total-cell"><div class="cmp-metric">Total</div><div class="cmp-val total">${s.visCobr+g.visCobr}</div><div class="cmp-sub">${s.visCobrPend+g.visCobrPend} pend.</div></div>
+      <div class="cmp-cell ${ws4}"><div class="cmp-metric">Cobranza</div><div class="cmp-val saul">${s.visCobr}</div><div class="cmp-sub">${s.visCobrPend} pendientes</div></div>
+      <div class="cmp-cell ${wg4}"><div class="cmp-metric">Cobranza</div><div class="cmp-val gabriel">${g.visCobr}</div><div class="cmp-sub">${g.visCobrPend} pendientes</div></div>
     </div>
 
     <div class="cmp-row">
       <div class="cmp-cell ${ws5}"><div class="cmp-metric">Efectividad</div><div class="cmp-val saul">${fd(s.efectividad)}%</div><div class="cmp-sub">${s.ventas}/${s.pres}</div></div>
       <div class="cmp-cell ${wg5}"><div class="cmp-metric">Efectividad</div><div class="cmp-val gabriel">${fd(g.efectividad)}%</div><div class="cmp-sub">${g.ventas}/${g.pres}</div></div>
-      <div class="cmp-cell total-cell"><div class="cmp-metric">Combinada</div><div class="cmp-val total">${(s.pres+g.pres)>0?fd((s.ventas+g.ventas)/(s.pres+g.pres)*100):'0.0'}%</div><div class="cmp-sub">${s.ventas+g.ventas}/${s.pres+g.pres}</div></div>
     </div>
 
     <div class="cmp-row">
-      <div class="cmp-cell ${ws6}"><div class="cmp-metric">Prom. Venta</div><div class="cmp-val saul" style="font-size:16px">Bs ${fmt(s.promVenta)}</div></div>
-      <div class="cmp-cell ${wg6}"><div class="cmp-metric">Prom. Venta</div><div class="cmp-val gabriel" style="font-size:16px">Bs ${fmt(g.promVenta)}</div></div>
-      <div class="cmp-cell total-cell"><div class="cmp-metric">Promedio</div><div class="cmp-val total" style="font-size:16px">Bs ${fmt((s.ventas+g.ventas)>0?(s.montoVendido+g.montoVendido)/(s.ventas+g.ventas):0)}</div></div>
+      <div class="cmp-cell ${ws6}"><div class="cmp-metric">Prom. Venta</div><div class="cmp-val saul" style="font-size:18px">Bs ${fmt(s.promVenta)}</div></div>
+      <div class="cmp-cell ${wg6}"><div class="cmp-metric">Prom. Venta</div><div class="cmp-val gabriel" style="font-size:18px">Bs ${fmt(g.promVenta)}</div></div>
     </div>
 
     <div class="cmp-row">
-      <div class="cmp-cell ${ws7}"><div class="cmp-metric">Prom. Presup.</div><div class="cmp-val saul" style="font-size:16px">Bs ${fmt(s.promPres)}</div></div>
-      <div class="cmp-cell ${wg7}"><div class="cmp-metric">Prom. Presup.</div><div class="cmp-val gabriel" style="font-size:16px">Bs ${fmt(g.promPres)}</div></div>
-      <div class="cmp-cell total-cell"><div class="cmp-metric">Promedio</div><div class="cmp-val total" style="font-size:16px">Bs ${fmt((s.pres+g.pres)>0?(s.pres*s.promPres+g.pres*g.promPres)/(s.pres+g.pres):0)}</div></div>
+      <div class="cmp-cell ${ws7}"><div class="cmp-metric">Prom. Presup.</div><div class="cmp-val saul" style="font-size:18px">Bs ${fmt(s.promPres)}</div></div>
+      <div class="cmp-cell ${wg7}"><div class="cmp-metric">Prom. Presup.</div><div class="cmp-val gabriel" style="font-size:18px">Bs ${fmt(g.promPres)}</div></div>
     </div>
 
     <div class="cmp-row">
       <div class="cmp-cell ${ws8}"><div class="cmp-metric">% Canceladas</div><div class="cmp-val saul" style="color:${s.pctCanceladas>30?'var(--red)':'var(--saul)'}">${fd(s.pctCanceladas)}%</div><div class="cmp-sub">${s.visCanceladas}/${s.visTotales}</div></div>
       <div class="cmp-cell ${wg8}"><div class="cmp-metric">% Canceladas</div><div class="cmp-val gabriel" style="color:${g.pctCanceladas>30?'var(--red)':'var(--gabriel)'}">${fd(g.pctCanceladas)}%</div><div class="cmp-sub">${g.visCanceladas}/${g.visTotales}</div></div>
-      <div class="cmp-cell total-cell"><div class="cmp-metric">Combinada</div><div class="cmp-val total" style="color:${(s.visCanceladas+g.visCanceladas)/(s.visTotales+g.visTotales||1)*100>30?'var(--red)':'var(--text)'}">${(s.visTotales+g.visTotales)>0?fd((s.visCanceladas+g.visCanceladas)/(s.visTotales+g.visTotales)*100):'0.0'}%</div><div class="cmp-sub">${s.visCanceladas+g.visCanceladas}/${s.visTotales+g.visTotales}</div></div>
     </div>
 
     <div class="section-label" style="margin-top:24px">Visitas diarias del mes — Saúl + Gabriel</div>
