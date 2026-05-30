@@ -487,7 +487,9 @@ function calcATO(key, inPeriod) {
   const visCobrPend=visPeriodo.filter(v=>String(v['Estado_Visita']||'')==='Pendiente'&&esCobr(v)&&matchATO(v['Asesor_Visita'],key));
   const pres=DATA.presupuestos.filter(p=>matchATO(p['Asesor_Presupuesto'],key)&&inPeriod(p['Fecha_Presupuesto']));
   const ventas=DATA.presupuestos.filter(p=>matchATO(p['Asesor_Presupuesto'],key)&&String(p['Estado_Presupuesto']||'')==='Vendido'&&inPeriod(p['Fecha_Venta']));
+  const senias=DATA.presupuestos.filter(p=>matchATO(p['Asesor_Presupuesto'],key)&&String(p['Estado_Presupuesto']||'')==='Señado'&&inPeriod(p['Fecha_Presupuesto']));
   const montoVendido=ventas.reduce((s,p)=>s+(parseFloat(p['SubTotal_Presupuesto'])||0),0);
+  const montoSenias=senias.reduce((s,p)=>s+(parseFloat(p['SubTotal_Presupuesto'])||0),0);
   const efectividad=pres.length>0?(ventas.length/pres.length*100):0;
   const promPres=pres.length>0?pres.reduce((s,p)=>s+(parseFloat(p['SubTotal_Presupuesto'])||0),0)/pres.length:0;
   const promVenta=ventas.length>0?montoVendido/ventas.length:0;
@@ -498,7 +500,8 @@ function calcATO(key, inPeriod) {
   const visPresupCanc=visPresupAsig.filter(v=>String(v['Estado_Visita']||'')==='Cancelada');
   const pctPresupCanc=visPresupAsig.length>0?(visPresupCanc.length/visPresupAsig.length*100):0;
   return {visPresup:visPresup.length,visCobr:visCobr.length,visCobrPend:visCobrPend.length,
-    pres:pres.length,ventas:ventas.length,montoVendido,efectividad,promPres,promVenta,
+    pres:pres.length,ventas:ventas.length,montoVendido,senias:senias.length,montoSenias,
+    efectividad,promPres,promVenta,
     pctCanceladas,visCanceladas:visCanceladas.length,visTotales:visTotales.length,
     visPresupAsig:visPresupAsig.length,visPresupCanc:visPresupCanc.length,pctPresupCanc};
 }
@@ -517,6 +520,11 @@ function render() {
         <div class="kpi-label">Monto Vendido</div>
         <div class="kpi-value ${k}">Bs ${fmt(c.montoVendido)}</div>
         <div class="kpi-sub">${c.ventas} venta${c.ventas!==1?'s':''} cerrada${c.ventas!==1?'s':''}</div>
+      </div>
+      <div class="kpi-card full-width" style="border-color:rgba(61,204,138,0.25);background:rgba(61,204,138,0.07)">
+        <div class="kpi-label">Señas</div>
+        <div class="kpi-value" style="color:#3dcc8a">Bs ${fmt(c.montoSenias)}</div>
+        <div class="kpi-sub">${c.senias} presupuesto${c.senias!==1?'s':''} señado${c.senias!==1?'s':''}</div>
       </div>
       <div class="kpi-card"><div class="kpi-label">Promedio Venta</div><div class="kpi-value ${k} small">Bs ${fmt(c.promVenta)}</div></div>
       <div class="kpi-card"><div class="kpi-label">Promedio Presup.</div><div class="kpi-value ${k} small">Bs ${fmt(c.promPres)}</div></div>
@@ -590,6 +598,12 @@ function renderAdmin() {
       <div class="cmp-cell ${ws1}"><div class="cmp-metric">Monto Vendido</div><div class="cmp-val saul" style="font-size:16px">Bs ${fmt(s.montoVendido)}</div><div class="cmp-sub">${s.ventas} venta${s.ventas!==1?'s':''}</div></div>
       <div class="cmp-cell ${wg1}"><div class="cmp-metric">Monto Vendido</div><div class="cmp-val gabriel" style="font-size:16px">Bs ${fmt(g.montoVendido)}</div><div class="cmp-sub">${g.ventas} venta${g.ventas!==1?'s':''}</div></div>
       <div class="cmp-cell total-cell"><div class="cmp-metric">Total</div><div class="cmp-val total" style="font-size:16px">Bs ${fmt(s.montoVendido+g.montoVendido)}</div><div class="cmp-sub">${s.ventas+g.ventas} ventas</div></div>
+    </div>
+
+    <div class="cmp-row">
+      <div class="cmp-cell" style="border-color:rgba(61,204,138,0.25);background:rgba(61,204,138,0.07)"><div class="cmp-metric">Señas</div><div class="cmp-val" style="color:#3dcc8a;font-size:16px">Bs ${fmt(s.montoSenias)}</div><div class="cmp-sub">${s.senias} señado${s.senias!==1?'s':''}</div></div>
+      <div class="cmp-cell" style="border-color:rgba(61,204,138,0.25);background:rgba(61,204,138,0.07)"><div class="cmp-metric">Señas</div><div class="cmp-val" style="color:#3dcc8a;font-size:16px">Bs ${fmt(g.montoSenias)}</div><div class="cmp-sub">${g.senias} señado${g.senias!==1?'s':''}</div></div>
+      <div class="cmp-cell total-cell"><div class="cmp-metric">Total Señas</div><div class="cmp-val" style="color:#3dcc8a;font-size:16px">Bs ${fmt(s.montoSenias+g.montoSenias)}</div><div class="cmp-sub">${s.senias+g.senias} señados</div></div>
     </div>
 
     <div class="cmp-row">
