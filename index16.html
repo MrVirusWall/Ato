@@ -497,27 +497,6 @@ function calcATO(key, inPeriod) {
   const senias=DATA.presupuestos.filter(p=>matchATO(p['Asesor_Presupuesto'],key)&&String(p['Estado_Presupuesto']||'')==='Señado'&&inPeriod(p['Fecha_Presupuesto']));
   const montoVendido=ventas.reduce((s,p)=>s+(parseFloat(p['SubTotal_Presupuesto'])||0),0);
   const montoSenias=senias.reduce((s,p)=>s+(parseFloat(p['SubTotal_Presupuesto'])||0),0);
-  // Señas antiguas: estado Señado, fecha presupuesto entre 3 meses atras y antes del mes actual
-  const now=new Date(), y=now.getFullYear(), mo=now.getMonth();
-  const inicioVentana=new Date(y, mo-3, 1);
-  const inicioMesActual=new Date(y, mo, 1);
-  const seniasAntiguas=DATA.presupuestos.filter(p=>{
-    if(!matchATO(p['Asesor_Presupuesto'],key)) return false;
-    if(String(p['Estado_Presupuesto']||'')!=='Señado') return false;
-    const d=parseGVizDate(p['Fecha_Presupuesto']);
-    return d && d>=inicioVentana && d<inicioMesActual;
-  });
-  // Agrupar señas antiguas por mes para mostrar detalle
-  const seniasAntigMeses={};
-  seniasAntiguas.forEach(p=>{
-    const d=parseGVizDate(p['Fecha_Presupuesto']);
-    if(!d) return;
-    const key2=d.getFullYear()+'-'+(d.getMonth()+1);
-    if(!seniasAntigMeses[key2]) seniasAntigMeses[key2]={label:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][d.getMonth()]+' '+d.getFullYear(),monto:0,count:0};
-    seniasAntigMeses[key2].monto+=(parseFloat(p['SubTotal_Presupuesto'])||0);
-    seniasAntigMeses[key2].count++;
-  });
-  const montoSeniasAntig=seniasAntiguas.reduce((s,p)=>s+(parseFloat(p['SubTotal_Presupuesto'])||0),0);
   const efectividad=pres.length>0?(ventas.length/pres.length*100):0;
   const promPres=pres.length>0?pres.reduce((s,p)=>s+(parseFloat(p['SubTotal_Presupuesto'])||0),0)/pres.length:0;
   const promVenta=ventas.length>0?montoVendido/ventas.length:0;
@@ -529,7 +508,6 @@ function calcATO(key, inPeriod) {
   const pctPresupCanc=visPresupAsig.length>0?(visPresupCanc.length/visPresupAsig.length*100):0;
   return {visPresup:visPresup.length,visCobr:visCobr.length,visCobrPend:visCobrPend.length,
     pres:pres.length,ventas:ventas.length,montoVendido,senias:senias.length,montoSenias,
-    seniasAntiguas:seniasAntiguas.length,montoSeniasAntig,seniasAntigMeses,
     efectividad,promPres,promVenta,
     pctCanceladas,visCanceladas:visCanceladas.length,visTotales:visTotales.length,
     visPresupAsig:visPresupAsig.length,visPresupCanc:visPresupCanc.length,pctPresupCanc};
@@ -551,19 +529,10 @@ function render() {
         <div class="kpi-sub">${c.ventas} venta${c.ventas!==1?'s':''} cerrada${c.ventas!==1?'s':''}</div>
       </div>
       <div class="kpi-card full-width" style="border-color:rgba(61,204,138,0.25);background:rgba(61,204,138,0.07)">
-        <div class="kpi-label">Señas este mes</div>
+        <div class="kpi-label">Señas</div>
         <div class="kpi-value" style="color:#3dcc8a">Bs ${fmt(c.montoSenias)}</div>
         <div class="kpi-sub">${c.senias} presupuesto${c.senias!==1?'s':''} señado${c.senias!==1?'s':''}</div>
       </div>
-      ${c.seniasAntiguas>0?`<div class="kpi-card full-width" style="border-color:rgba(61,204,138,0.15);background:rgba(61,204,138,0.04)">
-        <div class="kpi-label" style="color:#3dcc8a">⚠ Señas anteriores sin cerrar</div>
-        <div class="kpi-value" style="color:#3dcc8a;font-size:22px">Bs ${fmt(c.montoSeniasAntig)}</div>
-        <div class="kpi-sub">${c.seniasAntiguas} señado${c.seniasAntiguas!==1?'s':''} pendiente${c.seniasAntiguas!==1?'s':''} de meses anteriores</div>
-        <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(61,204,138,0.15)">
-          ${Object.values(c.seniasAntigMeses).map(m=>`<div style="font-size:11px;color:rgba(255,255,255,0.45);margin-bottom:3px">${m.label}: <span style="color:#3dcc8a;font-weight:600">Bs ${fmt(m.monto)}</span> (${m.count})</div>`).join('')}
-        </div>
-        <div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.3)">Total acumulado: <span style="color:#3dcc8a;font-weight:600">Bs ${fmt(c.montoSenias+c.montoSeniasAntig)}</span></div>
-      </div>`:''}
       <div class="kpi-card"><div class="kpi-label">Promedio Venta</div><div class="kpi-value ${k} small">Bs ${fmt(c.promVenta)}</div></div>
       <div class="kpi-card"><div class="kpi-label">Promedio Presup.</div><div class="kpi-value ${k} small">Bs ${fmt(c.promPres)}</div></div>
     </div>
@@ -639,17 +608,10 @@ function renderAdmin() {
     </div>
 
     <div class="cmp-row">
-      <div class="cmp-cell" style="border-color:rgba(61,204,138,0.25);background:rgba(61,204,138,0.07)"><div class="cmp-metric">Señas este mes</div><div class="cmp-val" style="color:#3dcc8a;font-size:16px">Bs ${fmt(s.montoSenias)}</div><div class="cmp-sub">${s.senias} señado${s.senias!==1?'s':''}</div></div>
-      <div class="cmp-cell" style="border-color:rgba(61,204,138,0.25);background:rgba(61,204,138,0.07)"><div class="cmp-metric">Señas este mes</div><div class="cmp-val" style="color:#3dcc8a;font-size:16px">Bs ${fmt(g.montoSenias)}</div><div class="cmp-sub">${g.senias} señado${g.senias!==1?'s':''}</div></div>
+      <div class="cmp-cell" style="border-color:rgba(61,204,138,0.25);background:rgba(61,204,138,0.07)"><div class="cmp-metric">Señas</div><div class="cmp-val" style="color:#3dcc8a;font-size:16px">Bs ${fmt(s.montoSenias)}</div><div class="cmp-sub">${s.senias} señado${s.senias!==1?'s':''}</div></div>
+      <div class="cmp-cell" style="border-color:rgba(61,204,138,0.25);background:rgba(61,204,138,0.07)"><div class="cmp-metric">Señas</div><div class="cmp-val" style="color:#3dcc8a;font-size:16px">Bs ${fmt(g.montoSenias)}</div><div class="cmp-sub">${g.senias} señado${g.senias!==1?'s':''}</div></div>
       <div class="cmp-cell total-cell"><div class="cmp-metric">Total Señas</div><div class="cmp-val" style="color:#3dcc8a;font-size:16px">Bs ${fmt(s.montoSenias+g.montoSenias)}</div><div class="cmp-sub">${s.senias+g.senias} señados</div></div>
     </div>
-
-    ${(s.seniasAntiguas+g.seniasAntiguas)>0?`<div class="cmp-row">
-      <div class="cmp-cell" style="border-color:rgba(61,204,138,0.15);background:rgba(61,204,138,0.04)"><div class="cmp-metric" style="color:#3dcc8a">⚠ Señas sin cerrar</div><div class="cmp-val" style="color:#3dcc8a;font-size:16px">Bs ${fmt(s.montoSeniasAntig)}</div><div class="cmp-sub">${s.seniasAntiguas} de meses ant.</div></div>
-      <div class="cmp-cell" style="border-color:rgba(61,204,138,0.15);background:rgba(61,204,138,0.04)"><div class="cmp-metric" style="color:#3dcc8a">⚠ Señas sin cerrar</div><div class="cmp-val" style="color:#3dcc8a;font-size:16px">Bs ${fmt(g.montoSeniasAntig)}</div><div class="cmp-sub">${g.seniasAntiguas} de meses ant.</div></div>
-      <div class="cmp-cell total-cell"><div class="cmp-metric" style="color:#3dcc8a">Total acumulado</div><div class="cmp-val" style="color:#3dcc8a;font-size:16px">Bs ${fmt(s.montoSeniasAntig+g.montoSeniasAntig)}</div><div class="cmp-sub">${s.seniasAntiguas+g.seniasAntiguas} pendientes</div></div>
-    </div>`:''}
-
 
     <div class="cmp-row">
       <div class="cmp-cell ${ws2}"><div class="cmp-metric">Presupuestos</div><div class="cmp-val saul">${s.pres}</div></div>
