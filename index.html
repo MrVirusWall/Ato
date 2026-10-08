@@ -457,6 +457,12 @@ function matchATO(val, key) {
   const v=String(val).toLowerCase().trim();
   return ATO_IDS[key].some(id=>v===id.toLowerCase()||v.includes(id.toLowerCase()));
 }
+// Presupuestos con Asesor vacío (pasa a veces en AppSheet): se atribuyen al ATO que los creó.
+const ATO_EMAILS = { saul:'atopirka2@gmail.com', gabriel:'atopirka@gmail.com' };
+function matchPres(p, key) {
+  if(p['Asesor_Presupuesto']) return matchATO(p['Asesor_Presupuesto'], key);
+  return String(p['Creador_Presupuesto']||'').toLowerCase().trim()===ATO_EMAILS[key];
+}
 function isMyATO(val) { return matchATO(val, currentATO.key); }
 
 // ─── FETCH ────────────────────────────────────────────
@@ -492,9 +498,9 @@ function calcATO(key, inPeriod) {
   const visPresup=visPeriodo.filter(v=>String(v['Estado_Visita']||'')==='Realizada'&&esPresup(v)&&matchATO(v['Asesor_Visita'],key));
   const visCobr=visPeriodo.filter(v=>String(v['Estado_Visita']||'')==='Realizada'&&esCobr(v)&&matchATO(v['Asesor_Visita'],key));
   const visCobrPend=visPeriodo.filter(v=>String(v['Estado_Visita']||'')==='Pendiente'&&esCobr(v)&&matchATO(v['Asesor_Visita'],key));
-  const pres=DATA.presupuestos.filter(p=>matchATO(p['Asesor_Presupuesto'],key)&&inPeriod(p['Fecha_Presupuesto']));
-  const ventas=DATA.presupuestos.filter(p=>matchATO(p['Asesor_Presupuesto'],key)&&String(p['Estado_Presupuesto']||'')==='Vendido'&&inPeriod(p['Fecha_Venta']));
-  const senias=DATA.presupuestos.filter(p=>matchATO(p['Asesor_Presupuesto'],key)&&String(p['Estado_Presupuesto']||'')==='Señado'&&inPeriod(p['Fecha_Presupuesto']));
+  const pres=DATA.presupuestos.filter(p=>matchPres(p,key)&&inPeriod(p['Fecha_Presupuesto']));
+  const ventas=DATA.presupuestos.filter(p=>matchPres(p,key)&&String(p['Estado_Presupuesto']||'')==='Vendido'&&inPeriod(p['Fecha_Venta']));
+  const senias=DATA.presupuestos.filter(p=>matchPres(p,key)&&String(p['Estado_Presupuesto']||'')==='Señado'&&inPeriod(p['Fecha_Presupuesto']));
   const montoVendido=ventas.reduce((s,p)=>s+(parseFloat(p['SubTotal_Presupuesto'])||0),0);
   const montoSenias=senias.reduce((s,p)=>s+(parseFloat(p['SubTotal_Presupuesto'])||0),0);
   // Señas antiguas: estado Señado, fecha presupuesto entre 3 meses atras y antes del mes actual
@@ -502,7 +508,7 @@ function calcATO(key, inPeriod) {
   const inicioVentana=new Date(y, mo-3, 1);
   const inicioMesActual=new Date(y, mo, 1);
   const seniasAntiguas=DATA.presupuestos.filter(p=>{
-    if(!matchATO(p['Asesor_Presupuesto'],key)) return false;
+    if(!matchPres(p,key)) return false;
     if(String(p['Estado_Presupuesto']||'')!=='Señado') return false;
     const d=parseGVizDate(p['Fecha_Presupuesto']);
     return d && d>=inicioVentana && d<inicioMesActual;
